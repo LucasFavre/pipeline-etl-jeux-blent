@@ -10,14 +10,10 @@
 - verified : indique si l'utilisateur est un utilisateur vérifié (et non un robot).
 - asin : identifiant unique du produit.
 - reviewerName : nom/pseudo de l'utilisateur.
-- vote : nombre de votes associés à l'avis de l'utilisateur.
-- style : style associé au jeu vidéo.
-- reviewText : description complète de l'avis.
 - overall : note attribuée par l'utilisateur au jeu vidéo.
 - summary : résumé de l'avis.
 - unixReviewTime : timestamp de l'avis.
 - reviewTime : date de l'avis.
-- image : URL des images jointes par l'utilisateur.
 
 ## Data Warehouse PostgreSQL
 <p align="justify">Pour réaliser ce projet en respectant les conditions de l'enseigne, nous devons créer un Data Warehouse qui permettra de stocker les jeux les mieux notées des 6 derniers mpis. Pour cela, nous avons choisi une base de données relationelles PostgreSQL. Les jeux les mieux notées se retrouvent donc dans une table dont les colonnes sont obtenues à partir des données archivées du data lake :</p>
