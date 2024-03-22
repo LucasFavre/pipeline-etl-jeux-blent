@@ -50,6 +50,9 @@ default_args = {
 
 
 def get_avis(**kwargs):
+  """
+  Utilise pymongo pour se connecter à la collection MongoDB et réaliser une aggrégation pour obtenir les meilleurs jeux des 6 derniers mois.
+  """
 
   client = MongoClient(kwargs['mongo_uri'], username = 'admin', password = kwargs['mongo_pw'])
 
@@ -59,9 +62,9 @@ def get_avis(**kwargs):
   date = datetime.strptime(kwargs['date'], '%Y-%m-%d')
   sixmonthsago = date - relativedelta(months = 6)
 
-  match = {'$match': {'unixReviewTime': {'$gte': int(sixmonthsago.timestamp()), '$lte': int(date.timestamp())}}}
+  match_time = {'$match': {'unixReviewTime': {'$gte': int(sixmonthsago.timestamp()), '$lte': int(date.timestamp())}}} # On prend seulement les avis des 6 derniers mois
 
-  sort = {'$sort': {'unixReviewTime': -1}}
+  sort_time = {'$sort': {'unixReviewTime': -1}}
 
   group = {
           '$group': {
@@ -81,6 +84,8 @@ def get_avis(**kwargs):
           }
       }
 
+  match_nb_ratings = {'$match' : {'nb_ratings' : {'$gte' : 30}}}   # On prend seulement les jeux avec 30 notes ou plus dans les 6 derniers mois pour que la note moyenne soit un minimum significative
+
   project = {
           '$project': {
               '_id': 1, 
@@ -95,7 +100,11 @@ def get_avis(**kwargs):
           }
       }
 
-  agg = [match, sort, group, project]
+  sort_avg_rating = {'$sort': {'average_rating': -1}}
+
+  limit = {'$limit' : 15} # On prend les 15 jeux les mieux notés
+
+  agg = [match_time, sort_time, group, match_nb_ratings, project, sort_avg_rating, limit]
 
   def sql_string(value):
     if isinstance(value, str):
@@ -118,14 +127,18 @@ def get_avis(**kwargs):
 
 @dag(DAG_NAME, default_args=default_args, schedule_interval="@daily", start_date=days_ago(1))
 def dag_update_avis_jeux():
+    """
+    Ce DAG récupère tous les jours les 15 jeux avec les meilleurs notes moyennes dans les 6 derniers mois depuis la base mongoDB,
+    afin de mettre à jour la BDD Postgres.
+    """
 
 
   # Si production -> Mettre sous variables airflow
   postgres_conn_id = 'my_postgres_connection'
-  postgres_host = '18.202.251.80'
-  postgres_pw = '89ibdYeycOjb'
-  mongo_uri = "mongodb://18.203.138.218:27017?directConnection=true"
-  mongo_pw = 'e5JGsSYUPD8lvxJk'
+  postgres_host = '34.247.71.112'
+  postgres_pw = 'Y0OvlSMNmnGt'
+  mongo_uri = "mongodb://3.255.102.208:27017?directConnection=true"
+  mongo_pw = 'ygIBHndSm8b5yFAC'
 
   create_conn(
       conn_id=postgres_conn_id,
@@ -133,7 +146,7 @@ def dag_update_avis_jeux():
       host=postgres_host,
       login='postgres',
       password=postgres_pw,
-      schema='jeux_blent',
+      schema='blent',
       port=5432
   )
 
